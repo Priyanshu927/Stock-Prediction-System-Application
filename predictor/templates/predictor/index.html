@@ -1,0 +1,77 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Stock Market Predictor</title>
+  <link rel="stylesheet" href="{% static 'predictor/css/style.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="sidebar">
+    <h1><i class="fa fa-chart-line"></i> Stocks</h1>
+    <div class="sidebar-user">
+      <i class="fa fa-user-circle"></i>
+      <div>
+        {% if user.is_authenticated %}
+          <div>
+            <b>Welcome</b><br><span style="font-size:0.92em;">{{ user.username }}</span>
+          </div>
+        {% else %}
+          <div>
+            <b>Welcome</b><br><span style="font-size:0.92em;">Guest</span>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="nav">
+      <a href="/" class="{% if request.path == '/' %}active{% endif %}"><i class="fa fa-home"></i> Home</a>
+      {% if user.is_authenticated %}
+        <a href="/predict/" class="{% if 'predict' in request.path %}active{% endif %}"><i class="fa fa-search"></i> Predict</a>
+        <a href="/ticker/" class="{% if 'ticker' in request.path %}active{% endif %}"><i class="fa fa-table"></i> Ticker Info</a>
+        <a href="{% url 'logout' %}"><i class="fa fa-sign-out-alt"></i> Logout</a>
+      {% else %}
+        <a href="{% url 'login' %}"><i class="fa fa-sign-in-alt"></i> Login</a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="content">
+    {% if not user.is_authenticated %}
+      <div class="card">
+        <h2><i class="fa fa-lock"></i> Login Required</h2>
+        <p>Please log in to access the stock prediction features.</p>
+        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+          <a href="{% url 'login' %}" class="login-button">Login</a>
+          <a href="{% url 'register' %}" style="background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Create Account</a>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 20px;">
+        <h2><i class="fa fa-info-circle"></i> About Account Creation</h2>
+        <p style="color: #666; margin-bottom: 15px;">To create an account, you need to provide:</p>
+        <ul style="color: #666; padding-left: 20px;">
+          <li>Valid PAN card number (format: AAAAA1234A)</li>
+          <li>Full name as per PAN card</li>
+          <li>Date of birth</li>
+          <li>Address</li>
+          <li>PAN card image for verification</li>
+        </ul>
+        <p style="color: #666; margin-top: 15px;"><strong>Note:</strong> PAN card verification is mandatory for account creation.</p>
+      </div>
+    {% else %}
+      <div class="card">
+        <h2><i class="fa fa-line-chart"></i> Stock Market Predictor</h2>
+        <form method="get" action="{% url 'predict' %}">
+          <label for="ticker">Ticker Name</label>
+          <input type="text" id="ticker" name="ticker" placeholder="AAPL, GOOGL, MSFT, TSLA, AMZN" required>
+          <label for="days">Number of Days</label>
+          <input type="number" id="days" name="days" value="3" min="1" max="30" required>
+          <button type="submit">Predict</button>
+        </form>
+        {% if error %}
+          <div class="error">{{ error }}</div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>

@@ -1,0 +1,173 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Stock Market Predictor</title>
+  <link rel="stylesheet" href="{% static 'predictor/css/style.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="sidebar">
+    <h1><i class="fa fa-chart-line"></i> Stocks</h1>
+    <div class="sidebar-user">
+      <i class="fa fa-user-circle"></i>
+      <div>
+        <b>Welcome</b><br><span style="font-size:0.92em;">Guest</span>
+      </div>
+    </div>
+    <div class="nav">
+      <a href="/" class="{% if request.path == '/' %}active{% endif %}"><i class="fa fa-home"></i> Home</a>
+      <a href="/predict/" class="{% if 'predict' in request.path %}active{% endif %}"><i class="fa fa-search"></i> Predict</a>
+      <a href="/ticker/" class="{% if 'ticker' in request.path %}active{% endif %}"><i class="fa fa-table"></i> Ticker Info</a>
+    </div>
+  </div>
+  <div class="content">
+    <div class="card">
+      <h2><i class="fa fa-line-chart"></i> Stock Market Predictor</h2>
+      <form method="get" action="{% url 'predict' %}">
+        <label for="ticker">Ticker Name</label>
+        <input type="text" id="ticker" name="ticker" placeholder="AAPL, GOOGL, MSFT, TSLA, AMZN" value="{{ request.GET.ticker }}" required>
+        <label for="days">Number of Days</label>
+        <input type="number" id="days" name="days" value="{{ request.GET.days|default:365 }}" min="1" max="730" required>
+        <button type="submit">Predict</button>
+      </form>
+      {% if error %}
+        <div class="error">{{ error }}</div>
+      {% endif %}
+      {% if prediction %}
+        <div class="result" style="max-width: 800px; margin: 0 auto;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div>
+              <p><b>Ticker:</b> {{ prediction.ticker }}</p>
+              <p><b>Current Price:</b> ${{ prediction.current_price }}</p>
+              <p><b>Predicted Price ({{ prediction.days }} days):</b> ${{ prediction.predicted_price }}</p>
+            </div>
+            <div class="qr-code" style="text-align: center;">
+              <h4>Scan to Share</h4>
+              <img src="data:image/png;base64,{{ prediction.qr_code }}" alt="QR Code" style="max-width: 120px; border: 2px solid #ee2b2d; border-radius: 8px; padding: 5px; background: #15151a;">
+            </div>
+          </div>
+          <div class="graph" style="margin-top: 20px; padding: 20px; background: rgba(21, 21, 26, 0.8); border-radius: 12px; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);">
+            <h3 style="color: #ee2b2d; text-align: center; margin-bottom: 20px; font-size: 24px; font-weight: bold; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);">Live Stock Price Prediction Graph</h3>
+            <canvas id="stockChart" width="800" height="400" style="max-width: 100%; height: auto; border: 2px solid #ee2b2d; border-radius: 8px; padding: 10px; background: linear-gradient(135deg, #15151a 0%, #1a1a1a 100%); display: block; margin: 0 auto; box-shadow: 0 4px 8px rgba(238, 43, 45, 0.3);"></canvas>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+
+
+  <script>
+    {% if prediction %}
+    console.log('Prediction data available, rendering chart...');
+    var predicted_dates = {{ prediction.predicted_dates|safe }};
+    var predicted_prices = {{ prediction.predicted_prices|safe }};
+    var current_price = {{ prediction.current_price|safe }};
+    var ticker = '{{ prediction.ticker }}';
+    console.log('Predicted dates:', predicted_dates);
+    console.log('Predicted prices:', predicted_prices);
+    console.log('Current price:', current_price);
+    console.log('Ticker:', ticker);
+
+    // Initialize chart
+    var ctx = document.getElementById('stockChart');
+    if (ctx) {
+      var chart = new Chart(ctx.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: ['Today'].concat(predicted_dates),
+          datasets: [{
+            label: 'Live Historical Prices',
+            data: [current_price],
+            borderColor: 'rgba(54, 162, 235, 1)',
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderWidth: 2,
+            fill: false,
+            tension: 0.1
+          }, {
+            label: 'Predicted Prices',
+            data: [null].concat(predicted_prices),
+            borderColor: 'rgba(255, 206, 86, 1)',
+            backgroundColor: 'rgba(255, 206, 86, 0.2)',
+            borderWidth: 3,
+            fill: false,
+            borderDash: [5, 5],
+            tension: 0.1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              labels: {
+                color: '#ffffff'
+              }
+            },
+            title: {
+              display: true,
+              text: ticker + ' Live Stock Price Prediction',
+              color: '#ee2b2d',
+              font: {
+                size: 18,
+                weight: 'bold'
+              }
+            }
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Time / Date',
+                color: '#ffffff'
+              },
+              ticks: {
+                color: '#ffffff'
+              },
+              grid: {
+                color: '#333333'
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Price ($)',
+                color: '#ffffff'
+              },
+              ticks: {
+                color: '#ffffff'
+              },
+              grid: {
+                color: '#333333'
+              }
+            }
+          }
+        }
+      });
+      console.log('Chart created successfully');
+
+      // Function to update live price
+      function updateLivePrice() {
+        fetch('/get_live_price/?ticker=' + ticker)
+          .then(response => response.json())
+          .then(data => {
+            if (data.price) {
+              console.log('Updating live price:', data.price);
+              // Update the current price point
+              chart.data.datasets[0].data[0] = data.price;
+              chart.update();
+            }
+          })
+          .catch(error => console.error('Error fetching live price:', error));
+      }
+
+      // Update every 10 seconds for demo
+      setInterval(updateLivePrice, 10000);
+    } else {
+      console.error('Canvas element not found');
+    }
+    {% endif %}
+  </script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Ticker Info - Stock Market Predictor</title>
+  <link rel="stylesheet" href="{% static 'predictor/css/style.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="sidebar">
+    <h1><i class="fa fa-chart-line"></i> Stocks</h1>
+    <div class="sidebar-user">
+      <i class="fa fa-user-circle"></i>
+      <div>
+        <b>Welcome</b><br><span style="font-size:0.92em;">Guest</span>
+      </div>
+    </div>
+    <div class="nav">
+      <a href="/" class="{% if request.path == '/' %}active{% endif %}"><i class="fa fa-home"></i> Home</a>
+      <a href="/predict/" class="{% if 'predict' in request.path %}active{% endif %}"><i class="fa fa-search"></i> Predict</a>
+      <a href="/ticker/" class="{% if 'ticker' in request.path %}active{% endif %}"><i class="fa fa-table"></i> Ticker Info</a>
+    </div>
+  </div>
+  <div class="content">
+    <div class="card">
+      <h2><i class="fa fa-info-circle"></i> Ticker Information</h2>
+      <form method="get" action="{% url 'ticker_info' %}">
+        <label for="ticker">Ticker Symbol</label>
+        <input type="text" id="ticker" name="ticker" placeholder="AAPL, GOOGL, MSFT, TSLA, AMZN" value="{{ request.GET.ticker }}" required>
+        <button type="submit">Get Info</button>
+      </form>
+      {% if error %}
+        <div class="error">{{ error }}</div>
+      {% endif %}
+      {% if info %}
+        <div class="result" style="max-width: 800px; margin: 0 auto;">
+          <h3>{{ ticker }} Information</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Company Name:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">{{ info.longName|default:"N/A" }}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Sector:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">{{ info.sector|default:"N/A" }}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Industry:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">{{ info.industry|default:"N/A" }}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Market Cap:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">{{ info.marketCap|default:"N/A" }}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Current Price:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${{ info.currentPrice|default:"N/A" }}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>52 Week High:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${{ info.fiftyTwoWeekHigh|default:"N/A" }}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>52 Week Low:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${{ info.fiftyTwoWeekLow|default:"N/A" }}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Volume:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">{{ info.volume|default:"N/A" }}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Average Volume:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">{{ info.averageVolume|default:"N/A" }}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>PE Ratio:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">{{ info.trailingPE|default:"N/A" }}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd;"><strong>Dividend Yield:</strong></td>
+              <td style="padding: 8px; border: 1px solid #ddd;">{{ info.dividendYield|default:"N/A" }}</td>
+            </tr>
+          </table>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

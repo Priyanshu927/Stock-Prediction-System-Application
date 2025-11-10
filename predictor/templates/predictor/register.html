@@ -1,0 +1,253 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Register - Stock Market Predictor</title>
+  <link rel="stylesheet" href="{% static 'predictor/css/style.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="sidebar">
+    <h1><i class="fa fa-chart-line"></i> Stocks</h1>
+    <div class="sidebar-user">
+      <i class="fa fa-user-circle"></i>
+      <div>
+        <b>Welcome</b><br><span style="font-size:0.92em;">Guest</span>
+      </div>
+    </div>
+    <div class="nav">
+      <a href="/" class="{% if request.path == '/' %}active{% endif %}"><i class="fa fa-home"></i> Home</a>
+      <a href="{% url 'login' %}"><i class="fa fa-sign-in-alt"></i> Login</a>
+    </div>
+  </div>
+  <div class="content">
+    <div class="card">
+      <h2><i class="fa fa-user-plus"></i> Create Account</h2>
+      <p style="color: #666; margin-bottom: 20px;">PAN card and mobile verification required to create an account.</p>
+
+      {% if messages %}
+        {% for message in messages %}
+          <div class="error" style="background: {% if message.tags == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if message.tags == 'success' %}#155724{% else %}#721c24{% endif %}; padding: 10px; margin-bottom: 15px; border-radius: 5px;">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" enctype="multipart/form-data" style="max-width: 600px; margin: 0 auto;" id="registerForm">
+        {% csrf_token %}
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+          <div>
+            <label for="id_username">Username</label>
+            <input type="text" id="id_username" name="username" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+          <div>
+            <label for="id_password1">Password</label>
+            <input type="password" id="id_password1" name="password1" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+          <div>
+            <label for="id_password2">Confirm Password</label>
+            <input type="password" id="id_password2" name="password2" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+          <div>
+            <label for="pan_card">PAN Card Number *</label>
+            <input type="text" id="pan_card" name="pan_card" placeholder="AAAAA1234A" maxlength="10" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; text-transform: uppercase;">
+            <small style="color: #666; font-size: 0.8em;">Format: 5 letters, 4 digits, 1 letter</small>
+            <div id="panError" style="color: red; font-size: 0.8em; display: none; margin-top: 5px;"></div>
+          </div>
+        </div>
+
+        <div style="margin-top: 15px;">
+          <label for="full_name">Full Name (as per PAN card) *</label>
+          <input type="text" id="full_name" name="full_name" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+
+        <div style="margin-top: 15px;">
+          <label for="date_of_birth">Date of Birth *</label>
+          <input type="date" id="date_of_birth" name="date_of_birth" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+
+        <div style="margin-top: 15px;">
+          <label for="mobile_number">Mobile Number (Registered with PAN) *</label>
+          <div style="display: flex; gap: 10px;">
+            <input type="tel" id="mobile_number" name="mobile_number" placeholder="10-digit mobile number" maxlength="10" required style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            <button type="button" id="sendOtpBtn" onclick="sendOTP()" style="padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">
+              <i class="fa fa-paper-plane"></i> Send OTP
+            </button>
+          </div>
+          <small style="color: #666; font-size: 0.8em;">Enter the mobile number linked with your PAN card</small>
+          <div id="mobileError" style="color: red; font-size: 0.8em; display: none; margin-top: 5px;"></div>
+        </div>
+
+        <div id="otpSection" style="margin-top: 15px; display: none;">
+          <label for="otp_input">Enter OTP *</label>
+          <div style="display: flex; gap: 10px;">
+            <input type="text" id="otp_input" name="otp" placeholder="6-digit OTP" maxlength="6" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            <button type="button" onclick="verifyOTP()" style="padding: 8px 15px; background: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer;">
+              <i class="fa fa-check"></i> Verify
+            </button>
+          </div>
+          <small style="color: #666; font-size: 0.8em;">OTP sent to your registered mobile number</small>
+          <div id="otpStatus" style="margin-top: 5px; font-size: 0.9em;"></div>
+        </div>
+
+        <div style="margin-top: 15px;">
+          <label for="address">Address *</label>
+          <textarea id="address" name="address" rows="3" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: vertical;"></textarea>
+        </div>
+
+        <div style="margin-top: 15px;">
+          <label for="pan_card_image">PAN Card Image *</label>
+          <input type="file" id="pan_card_image" name="pan_card_image" accept="image/*" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+          <small style="color: #666; font-size: 0.8em;">Upload a clear image of your PAN card</small>
+        </div>
+
+        <input type="hidden" id="mobile_verified" name="mobile_verified" value="false">
+
+        <button type="submit" id="submitBtn" disabled style="width: 100%; padding: 12px; background: #ccc; color: white; border: none; border-radius: 4px; cursor: not-allowed; margin-top: 20px; font-size: 16px;">
+          <i class="fa fa-user-plus"></i> Create Account (Verify Mobile First)
+        </button>
+      </form>
+
+      <p style="text-align: center; margin-top: 20px;">
+        Already have an account? <a href="{% url 'login' %}" style="color: #ee2b2d;">Login here</a>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // PAN Card Validation
+    document.getElementById('pan_card').addEventListener('input', function(e) {
+      const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+      const pan = e.target.value.toUpperCase();
+      const panError = document.getElementById('panError');
+      
+      if (pan.length === 10) {
+        if (panRegex.test(pan)) {
+          panError.style.display = 'none';
+          e.target.style.borderColor = '#28a745';
+        } else {
+          panError.textContent = 'Invalid PAN format. Use: AAAAA1234A';
+          panError.style.display = 'block';
+          e.target.style.borderColor = '#dc3545';
+        }
+      } else {
+        panError.style.display = 'none';
+        e.target.style.borderColor = '#ddd';
+      }
+    });
+
+    // Mobile Number Validation
+    document.getElementById('mobile_number').addEventListener('input', function(e) {
+      const mobile = e.target.value;
+      const mobileError = document.getElementById('mobileError');
+      
+      if (mobile.length === 10 && /^[6-9][0-9]{9}$/.test(mobile)) {
+        mobileError.style.display = 'none';
+        e.target.style.borderColor = '#28a745';
+      } else if (mobile.length === 10) {
+        mobileError.textContent = 'Invalid mobile number format';
+        mobileError.style.display = 'block';
+        e.target.style.borderColor = '#dc3545';
+      }
+    });
+
+    // Send OTP Function
+    function sendOTP() {
+      const mobile = document.getElementById('mobile_number').value;
+      const pan = document.getElementById('pan_card').value;
+      
+      if (!/^[6-9][0-9]{9}$/.test(mobile)) {
+        alert('Please enter a valid 10-digit mobile number');
+        return;
+      }
+      
+      if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(pan)) {
+        alert('Please enter a valid PAN card number first');
+        return;
+      }
+      
+      // AJAX call to send OTP
+      fetch('/send-otp/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+          mobile: mobile,
+          pan: pan
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          document.getElementById('otpSection').style.display = 'block';
+          document.getElementById('sendOtpBtn').disabled = true;
+          document.getElementById('sendOtpBtn').textContent = 'OTP Sent';
+          alert('OTP sent to your registered mobile number');
+        } else {
+          alert(data.message || 'Mobile number not linked with this PAN card');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error sending OTP. Please try again.');
+      });
+    }
+
+    // Verify OTP Function
+    function verifyOTP() {
+      const otp = document.getElementById('otp_input').value;
+      const mobile = document.getElementById('mobile_number').value;
+      
+      if (otp.length !== 6) {
+        alert('Please enter a valid 6-digit OTP');
+        return;
+      }
+      
+      // AJAX call to verify OTP
+      fetch('/verify-otp/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+          mobile: mobile,
+          otp: otp
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        const otpStatus = document.getElementById('otpStatus');
+        if (data.success) {
+          otpStatus.innerHTML = '<span style="color: #28a745;"><i class="fa fa-check-circle"></i> Mobile number verified successfully!</span>';
+          document.getElementById('mobile_verified').value = 'true';
+          document.getElementById('submitBtn').disabled = false;
+          document.getElementById('submitBtn').style.background = '#ee2b2d';
+          document.getElementById('submitBtn').style.cursor = 'pointer';
+          document.getElementById('submitBtn').innerHTML = '<i class="fa fa-user-plus"></i> Create Account';
+        } else {
+          otpStatus.innerHTML = '<span style="color: #dc3545;"><i class="fa fa-times-circle"></i> Invalid OTP. Please try again.</span>';
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error verifying OTP. Please try again.');
+      });
+    }
+
+    // Form Submission Validation
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+      const mobileVerified = document.getElementById('mobile_verified').value;
+      
+      if (mobileVerified !== 'true') {
+        e.preventDefault();
+        alert('Please verify your mobile number before creating an account');
+        return false;
+      }
+    });
+  </script>
+</body>
+</html>
